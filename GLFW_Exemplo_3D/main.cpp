@@ -15,7 +15,7 @@ void processInput(GLFWwindow *window);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-float* read_csv(std::string filename)
+std::vector<float>  read_csv(std::string filename)
 {
     // Reads a CSV file into a vector of <string, vector<int>> pairs where
     // each pair represents <column name, column values>
@@ -31,13 +31,13 @@ float* read_csv(std::string filename)
 
     // Helper vars
     std::string line, colname;
-    int val;
+    float val;
 
     // Read the column names
     if(myFile.good())
     {
         // Extract the first line in the file
-        std::getline(myFile, line);
+        //std::getline(myFile, line);
 
         // Create a stringstream from line
         std::stringstream ss(line);
@@ -69,11 +69,8 @@ float* read_csv(std::string filename)
 
     // Close file
     myFile.close();
-    float* arr = new float[resultVector.size()]; // NO () - not a constructor, but operator new[]
-    for (size_t i = 0; i < resultVector.size(); i++) {
-        arr[i] = resultVector[i];
-    }
-    return arr;
+
+    return resultVector;
 }
 
 int main()
@@ -121,10 +118,18 @@ int main()
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
 
-    float vertexes[] =  read_csv("test.csv");
+    std::vector<float> vertexes =  read_csv("test.csv");
 
 
-    float vertices[]={};
+    int vectorSize = vertexes.size();
+    float* vertices = new float[vectorSize];
+    for (size_t i = 0; i < vectorSize; i++) {
+        vertices[i] = vertexes[i];
+        //std::cout << vertices[i] << std::endl;
+    }
+
+
+    //float vertices[]={};
 
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -133,7 +138,7 @@ int main()
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexes), vertexes, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vectorSize, vertices, GL_STATIC_DRAW);
 
     // position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
