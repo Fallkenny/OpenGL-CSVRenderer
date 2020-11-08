@@ -125,8 +125,8 @@ int main()
     float* vertices = new float[vectorSize];
     for (size_t i = 0; i < vectorSize; i++) {
         vertices[i] = vertexes[i];
-        //std::cout << vertices[i] << std::endl;
     }
+    std::cout << vectorSize/8 << std::endl;
 
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -173,7 +173,7 @@ int main()
 
         // afasta o objetoo do observador e o coloca um pouco abaixo dele,
         // para um ponto de vista mais elevado do objeto
-        view  = glm::translate(view, glm::vec3(0.0f, -0.7f, -3.0f));
+        view  = glm::translate(view, glm::vec3(0.0f, -0.6f, -3.0f));
 
         projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         // retrieve the matrix uniform locations
@@ -188,7 +188,7 @@ int main()
         // render box
         glBindVertexArray(VAO);
 
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDrawArrays(GL_TRIANGLES, 0, vectorSize/8);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
