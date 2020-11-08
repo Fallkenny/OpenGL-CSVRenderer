@@ -173,7 +173,7 @@ int main()
 
         // afasta o objetoo do observador e o coloca um pouco abaixo dele,
         // para um ponto de vista mais elevado do objeto
-        view  = glm::translate(view, glm::vec3(0.0f, -0.6f, -3.0f));
+        view  = glm::translate(view, glm::vec3(0.0f, -0.6f, -4.0f));
 
         projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         // retrieve the matrix uniform locations
