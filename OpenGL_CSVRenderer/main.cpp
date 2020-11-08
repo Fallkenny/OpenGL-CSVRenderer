@@ -128,9 +128,6 @@ int main()
         //std::cout << vertices[i] << std::endl;
     }
 
-
-    //float vertices[]={};
-
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
