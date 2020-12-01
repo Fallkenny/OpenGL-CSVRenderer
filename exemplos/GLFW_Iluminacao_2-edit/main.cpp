@@ -1,3 +1,4 @@
+//edit
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -7,6 +8,7 @@
 
 #include "shader_m.h"
 #include "camera.h"
+
 #include <iostream>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -19,7 +21,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 6.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -31,65 +33,43 @@ float lastFrame = 0.0f;
 // lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
+// Reflexo especular
+float specularStrength = 0.5;
 
 std::vector<float>  read_csv(std::string filename)
 {
-    // Reads a CSV file into a vector of <string, vector<int>> pairs where
-    // each pair represents <column name, column values>
-
-    // Create a vector of <string, int vector> pairs to store the result
     std::vector<float> resultVector;
-
-    // Create an input filestream
     std::ifstream myFile(filename);
-
-    // Make sure the file is open
     if(!myFile.is_open()) throw std::runtime_error("Could not open file");
 
-    // Helper vars
     std::string line, colname;
     float val;
 
-    // Read the column names
     if(myFile.good())
     {
-        // Extract the first line in the file
-        //std::getline(myFile, line);
-
-        // Create a stringstream from line
         std::stringstream ss(line);
-
     }
 
-    // Read data, line by line
     while(std::getline(myFile, line))
     {
-        // Create a stringstream of the current line
         std::stringstream ss(line);
 
-        // Keep track of the current column index
         int colIdx = 0;
 
-        // Extract each integer
         while(ss >> val){
 
-            // Add the current integer to the 'colIdx' column's values vector
             resultVector.push_back(val);
 
-            // If the next token is a comma, ignore it and move on
             if(ss.peek() == ';') ss.ignore();
 
-            // Increment the column index
             colIdx++;
         }
     }
 
-    // Close file
     myFile.close();
 
     return resultVector;
 }
-
 
 int main()
 {
@@ -106,7 +86,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Iluminação Básica", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Modelo de Iluminação Phong", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -119,7 +99,7 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
 
     // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // glew: load all OpenGL function pointers
     // ---------------------------------------
@@ -136,12 +116,16 @@ int main()
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader lightingShader("basic_lighting.vs", "basic_lighting.fs");
+    Shader lightingShader("phong_lighting.vs", "phong_lighting.fs");
+    // Iluminação pelo modelo de Gourad
+    //Shader lightingShader("gourad_lighting.vs", "gourad_lighting.fs");
+    // Phong no espaço de visualização ao invés de no espaço mundial
+    //Shader lightingShader("model_lighting.vs", "model_lighting.fs");
+
     Shader lightCubeShader("light_cube.vs", "light_cube.fs");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
-
     float verticesCube[] = {
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
          0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -183,7 +167,7 @@ int main()
          0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
          0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
         -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
     };
 
     std::vector<float> vertexes =  read_csv("test comentado.csv");
@@ -195,26 +179,26 @@ int main()
     }
     std::cout << vectorSize/8 << std::endl;
 
- // first, configure the cube's VAO (and VBO)
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
+    // first, configure the cube's VAO (and VBO)
+    unsigned int VBO, cubeVAO;
+    glGenVertexArrays(1, &cubeVAO);
     glGenBuffers(1, &VBO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vectorSize, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)* vectorSize, vertices, GL_STATIC_DRAW);
 
-
-
-    glBindVertexArray(VAO);
+    glBindVertexArray(cubeVAO);
 
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     // normal attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-
+    //objColor attribute
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
 
     // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
@@ -227,11 +211,12 @@ int main()
 
     glBindVertexArray(lightCubeVAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, lightCubeVBO);
     // note that we update the lamp's position attribute's stride to reflect the updated buffer data
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
+   // normal attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // render loop
     // -----------
@@ -252,11 +237,17 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // change the light's position values over time (can be done anywhere in the render loop actually, but try to do it at least before using the light source positions)
+        lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
+        lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
+
         // be sure to activate shader when setting uniforms/drawing objects
         lightingShader.use();
-        lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-        lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+        //lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+        lightingShader.setVec3("lightColor", 1.0f, 8.0f, 0.0f);
         lightingShader.setVec3("lightPos", lightPos);
+        lightingShader.setVec3("viewPos", camera.Position);
+        lightingShader.setFloat("specularStrength",specularStrength);
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
@@ -266,11 +257,13 @@ int main()
 
         // world transformation
         glm::mat4 model = glm::mat4(1.0f);
+        // Demonstra o problema da distorção do vetor normal
+        //model = glm::scale(model, glm::vec3(0.5f, 0.2f, 3.0f)); // transformação de escala não linear
         lightingShader.setMat4("model", model);
 
         // render the cube
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, vectorSize);
+        glBindVertexArray(cubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, vectorSize/9);
 
 
         // also draw the lamp object
@@ -279,11 +272,11 @@ int main()
         lightCubeShader.setMat4("view", view);
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+        //model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
         lightCubeShader.setMat4("model", model);
 
         glBindVertexArray(lightCubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, vectorSize/8);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -294,8 +287,9 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &cubeVAO);
     glDeleteVertexArrays(1, &lightCubeVAO);
+    glDeleteBuffers(1, &lightCubeVBO);
     glDeleteBuffers(1, &VBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
@@ -319,6 +313,19 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) {
+        specularStrength += 0.01f;
+        if(specularStrength > 5.0f)
+            specularStrength = 5.0f;
+        std::cout << "Especular = " << specularStrength << std::endl;
+    }
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+        specularStrength -= 0.01f;
+        if(specularStrength < 0.0f)
+            specularStrength = 0.0f;
+        std::cout << "Especular = " << specularStrength << std::endl;
+    }
+
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
